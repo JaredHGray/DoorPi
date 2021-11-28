@@ -1,9 +1,9 @@
 import RPi.GPIO as GPIO
 import os
 import random
-from playsound import playsound
-import multiprocessing
-import time
+from playsound import playsound #music functions
+import multiprocessing#thread processes
+import time#able to use counters and the current time with the next import
 import datetime
 
 
@@ -36,7 +36,7 @@ def activeState():
         GPIO.output(7, GPIO.LOW)
         print("Currently Not Active")
 
-    elif active == 0: #if inactive: gives you 10sec to close circuit, during which the light flashes
+    elif active == 0: #if inactive: gives you 5sec to close circuit, during which the light flashes
         print("Activating in 5 seconds") #before remaining on to show system is active
         for x in range(0, 5):
             GPIO.output(7, GPIO.HIGH)
@@ -88,8 +88,7 @@ def watchDoor(): #function to define if door is open or not and what to do
                 warningThread = multiprocessing.Process(target=playsound, args=("Kevin-Warning.mp3",))#indefinitably
             if(musicThread.is_alive() == True):
                 time.sleep(5)
-                musicThread.terminate()
-                #musicThread = multiprocessing.Process(target=playsound, args=(randomMusic(),))#resets both music variables tp allow the music to be played
+                musicThread.terminate()#resets both music variables tp allow the music to be played
                 musicThread = multiprocessing.Process(target=playsound, args=('musicFiles/' + randomMusic(),))
         if GPIO.input(11) == 1: #to determine if system active or not
             activeState()
