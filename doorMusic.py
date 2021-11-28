@@ -5,7 +5,6 @@ from playsound import playsound
 import multiprocessing
 import time
 import datetime
-import pyaudio
 
 
 def randomMusic():#function to choose music randomly from a folder
