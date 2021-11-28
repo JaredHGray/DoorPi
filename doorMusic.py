@@ -5,19 +5,22 @@ from playsound import playsound
 import multiprocessing
 import time
 import datetime
+import pyaudio
 
-def randomMusic(): #function to choose music randomly from a folder
-    randomSong = random.choice(os.listdir("/Music"))
-    return randomSong
 
-musicThread = multiprocessing.Process(target=playsound, args=(randomMusic(),)) #variables to call different musics
-warningThread = multiprocessing.Process(target=playsound, args=("Kevin-Warning.mp3"),)
+def randomMusic():#function to choose music randomly from a folder
+    randomSong = random.choice(os.listdir('/home/pi/DoorPi/musicFiles'))
+    return randomSong 
 
+print(randomMusic(), "Here")
+musicThread = multiprocessing.Process(target= playsound, args=('musicFiles/' + randomMusic(),))#variables to call different musics
+warningThread = multiprocessing.Process(target=playsound, args=("/home/pi/Music/Kevin-Warning.mp3",))
+   
 def timeRange(start, end, current): #function to define time range for which music is played
-    return start <= end <= current
+    return start <= current <= end
 
-start = datetime.time(6, 0, 0) #variables for time range
-end = datetime.time(0, 59, 59)
+start = datetime.time(1, 30, 0) #variables for time range
+end = datetime.time(6, 30, 0)
 current = datetime.datetime.now().time()
 print(timeRange(start, end, current)) #print to test the range
 
@@ -56,32 +59,39 @@ def watchDoor(): #function to define if door is open or not and what to do
     while True:
         if active == 1 and GPIO.input(15)==1 and playing==False: #plays music if system is active, reed open, & isn't already playing
             playing = True
-            if(timeRange(start, end, current)): #if in time range, then plays fun music
-                musicThread.start()
+            if(timeRange(start, end, current)): #if in time range, then plays burglar alarm
+                warningThread.start()
                 active = 0
                 print(active)
-            else: #else plays the burglar alarm sound
-                warningThread.start()
+            else: #else plays the fun music
+                musicThread = multiprocessing.Process(target=playsound, args=('musicFiles/' + randomMusic(),))
+                musicThread.start()
                 active = 0
                 print(active)
 
         if GPIO.input(13) == 1: #the off button to disarm the device
             print("Stop button pressed: Disarming")
-            musicThread.terminate()#shuts all music off
-            warningThread.terminate()
-            activeSetup()
+            if(musicThread.is_alive() == True):
+                musicThread.terminate()#this button disables the alarm
+            if(warningThread.is_alive() == True):
+                warningThread.terminate()
+            active = 0
+            loopingFun()
             break
         
         if (GPIO.input(15) == 0 and active == 0): #if door closed then stops music after 5 secs
             print("Door Closed")
-            warningThread.terminate()
-            time.sleep(5)
-            musicThread.terminate()
             active = 1
             playing = False
-            musicThread = multiprocessing.Process(target=playsound, args=(randomMusic(),))#resets both music variables tp allow the music to be played
-            warningThread = multiprocessing.Process(target=playsound, args=("Kevin-Warning.mp3"), )#indefinitably
-
+            if(warningThread.is_alive() == True):
+                time.sleep(8)
+                warningThread.terminate()
+                warningThread = multiprocessing.Process(target=playsound, args=("Kevin-Warning.mp3",))#indefinitably
+            if(musicThread.is_alive() == True):
+                time.sleep(5)
+                musicThread.terminate()
+                #musicThread = multiprocessing.Process(target=playsound, args=(randomMusic(),))#resets both music variables tp allow the music to be played
+                musicThread = multiprocessing.Process(target=playsound, args=('musicFiles/' + randomMusic(),))
         if GPIO.input(11) == 1: #to determine if system active or not
             activeState()
             time.sleep(0.5)
@@ -92,17 +102,16 @@ GPIO.setup(11, GPIO.IN)
 GPIO.setup(13, GPIO.IN)
 GPIO.setup(15, GPIO.IN)
 
+def loopingFun():
+    GPIO.output(7, GPIO.LOW)
+    print("in the fun loop")
+    while True:#waits for an input from either button, & quits or changes the state to active accordingly
+        if(GPIO.input(11) == 1):#push this button to active the alarm system
+            activeState()
+            time.sleep(0.5)
+        if(active == 1): #if active then watchDoor function activated and tune will play when door opened
+            watchDoor()
+            break
 activeSetup()
-while True: #waits for an input from either button, & quits or changes the state to active accordingly
-    if(GPIO.input(13) == 1):
-        print("Stop button pressed: Disarming")
-        musicThread.terminate()#this button disables the alarm
-        warningThread.terminate()
-        #break
-    if(GPIO.input(11) == 1):#push this button to active the alarm system
-        activeState()
-        time.sleep(0.5)
-    if(active == 1): #if active then watchDoor function activated and tune will play when door opened
-        watchDoor()
-        break
+loopingFun()
 GPIO.cleanup() #resets pins
