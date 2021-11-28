@@ -5,7 +5,6 @@ from playsound import playsound
 import multiprocessing
 import time
 import datetime
-import pyaudio
 
 
 def randomMusic():#function to choose music randomly from a folder
@@ -14,13 +13,13 @@ def randomMusic():#function to choose music randomly from a folder
 
 print(randomMusic(), "Here")
 musicThread = multiprocessing.Process(target= playsound, args=('musicFiles/' + randomMusic(),))#variables to call different musics
-warningThread = multiprocessing.Process(target=playsound, args=("/home/pi/Music/Kevin-Warning.mp3",))
+warningThread = multiprocessing.Process(target=playsound, args=("Kevin-Warning.mp3",))
    
 def timeRange(start, end, current): #function to define time range for which music is played
     return start <= current <= end
 
 start = datetime.time(1, 30, 0) #variables for time range
-end = datetime.time(6, 30, 0)
+end = datetime.time(6, 00, 0)
 current = datetime.datetime.now().time()
 print(timeRange(start, end, current)) #print to test the range
 
